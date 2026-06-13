@@ -1,0 +1,32 @@
+{
+  "group_id": null,
+  "states": [
+    {
+      "character": {
+        "id": "3549cdd0-e846-4311-8222-fd45d5a35278",
+        "name": "Pixel Black Cat",
+        "prompt": "cute black cat with green eyes",
+        "size": {
+          "width": 68,
+          "height": 68
+        },
+        "template_id": "cat",
+        "directions": 4,
+        "view": "side",
+        "created_at": "2026-06-13T05:26:13.365104+00:00"
+      },
+      "folder": "Pixel_Black_Cat",
+      "frames": {
+        "rotations": {
+          "south": "Pixel_Black_Cat/rotations/south.png",
+          "west": "Pixel_Black_Cat/rotations/west.png",
+          "east": "Pixel_Black_Cat/rotations/east.png",
+          "north": "Pixel_Black_Cat/rotations/north.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-06-13T05:34:02.855432"
+}

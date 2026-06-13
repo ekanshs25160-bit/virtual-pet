@@ -1,0 +1,73 @@
+.pet-container {
+  position: fixed;
+  z-index: 1000;
+  cursor: grab;
+  user-select: none;
+  pointer-events: auto;
+  image-rendering: pixelated;
+}
+
+.pet-container:active {
+  cursor: grabbing;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.pet-typing {
+  animation: bounce 0.3s infinite;
+}
+
+.pet-sprite {
+  width: 64px;
+  height: 64px;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  /* Centering the scaled sprite origin so it pivots correctly */
+  transform-origin: center bottom;
+}
+
+.sprite-idle {
+  background-image: url('/sprites/sprite_ai_cat/idle.png');
+}
+
+.sprite-walk {
+  background-image: url('/sprites/sprite_ai_cat/walk.png');
+  animation: playSprite 0.8s steps(8) infinite;
+}
+
+@keyframes playSprite {
+  from { background-position: 0px; }
+  to { background-position: -512px; }
+}
+
+.speech-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 2px solid black;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+  font-family: var(--mono);
+  font-size: 14px;
+  white-space: nowrap;
+  color: black;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid black;
+}
+
+
