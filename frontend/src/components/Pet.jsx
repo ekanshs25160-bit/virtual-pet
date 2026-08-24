@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useMousePosition } from '../hooks/useMousePosition';
+import React, { useState, useEffect, useRef } from 'react';
 import { useKeystrokeWPM } from '../hooks/useKeystrokeWPM';
 import { useSystemIdleTracker } from '../hooks/useSystemIdleTracker';
 import { useMochiDrag } from '../hooks/useMochiDrag';
 import { useRoaming } from '../hooks/useRoaming';
+import { SpriteAnimator } from './SpriteAnimator';
 import './Pet.css';
 
 const Pet = () => {
-  const mousePos = useMousePosition();
   const wpm = useKeystrokeWPM();
   const { isIdle, idleTime } = useSystemIdleTracker(10000);
   const [position, setPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
   const { isDragging, onMouseDown } = useMochiDrag(position, setPosition);
   const { isRoaming } = useRoaming(setPosition, isDragging, isIdle);
   
-  const [animation, setAnimation] = useState('idle');
-  const [direction, setDirection] = useState('south');
+  const [petState, setPetState] = useState('IDLE');
+  const [isPetting, setIsPetting] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [message, setMessage] = useState('');
+  
+  const petSpriteRef = useRef(null);
   const [isTalking, setIsTalking] = useState(false);
 
   const speak = (msg, duration = 3000) => {
@@ -33,60 +35,109 @@ const Pet = () => {
     speak(lines[Math.floor(Math.random() * lines.length)]);
   };
 
-  // Determine direction based on mouse position relative to pet
+  // Track mouse directly with rAF to bypass React state thrashing
   useEffect(() => {
-    if (isDragging) return;
+    let animationFrameId;
 
-    const dx = mousePos.x - position.x - 44;
-    const dy = mousePos.y - position.y - 44;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    const handleMouseMove = (e) => {
+      if (isDragging || !petSpriteRef.current) return;
 
-    let dir = 'east';
-    if (angle >= 90 || angle < -90) dir = 'west';
+      const dx = e.clientX - position.x - 44;
+      const dy = e.clientY - position.y - 44;
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-    setDirection(dir);
-  }, [mousePos, position, isDragging]);
+      let scaleX = 1;
+      if (angle >= 90 || angle < -90) scaleX = -1;
+
+      animationFrameId = requestAnimationFrame(() => {
+        if (petSpriteRef.current) {
+          petSpriteRef.current.style.transform = `scaleX(${scaleX}) scale(1.5)`;
+        }
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [position.x, position.y, isDragging]);
 
   // Determine animation state
   useEffect(() => {
     if (isTalking) return; // Keep talking message
 
     if (isDragging) {
-      setAnimation('dragging');
+      setPetState('DRAGGING');
       setMessage('Put me down!');
+    } else if (isPetting) {
+      setPetState('PETTING');
+      setMessage('Purrr...');
+    } else if (wpm >= 60) {
+      setPetState('OVERHEATING');
+      setMessage('Too fast! Burning up!');
     } else if (wpm > 0) {
-      setAnimation('typing');
-      setMessage(`Typing fast! ${wpm} WPM`);
-    } else if (isIdle) {
-      setAnimation('sleeping');
-      setMessage('Zzz...');
+      setPetState('KNEADING');
+      setMessage(`Typing... ${wpm} WPM`);
+    } else if (isThinking) {
+      setPetState('THINKING');
+      setMessage('Thinking...');
     } else if (isRoaming) {
-      setAnimation('roaming');
+      setPetState('ROAMING');
       setMessage('');
+    } else if (isIdle) {
+      setPetState('IDLE');
+      setMessage('Zzz...');
     } else {
-      setAnimation('idle');
+      setPetState('IDLE');
       setMessage('');
     }
-  }, [isDragging, wpm, isIdle, isRoaming, isTalking]);
+  }, [isDragging, isPetting, wpm, isThinking, isRoaming, isIdle, isTalking]);
 
 
   return (
     <div 
-      className={`pet-container ${animation === 'typing' ? 'pet-typing' : ''} ${animation === 'roaming' ? 'pet-roaming' : ''}`}
+      className={`pet-container ${petState === 'KNEADING' || petState === 'OVERHEATING' ? 'pet-typing' : ''} ${petState === 'ROAMING' ? 'pet-roaming' : ''}`}
       style={{ 
-        left: position.x, 
-        top: position.y,
-        opacity: animation === 'sleeping' ? 0.6 : 1,
-        transition: isDragging ? 'none' : 'left 2s ease-in-out, top 2s ease-in-out, opacity 0.5s ease'
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        opacity: (isIdle && !isPetting && !isDragging) ? 0.6 : 1,
+        transition: isDragging ? 'none' : 'transform 2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease'
       }}
       onMouseDown={onMouseDown}
       onClick={handleClick}
+      onMouseEnter={() => {
+        try {
+          import('@tauri-apps/api/core').then(({ invoke }) => {
+            invoke('set_click_through', { ignore: false }).catch(console.error);
+          });
+        } catch (e) { /* Not running in Tauri */ }
+      }}
+      onMouseLeave={() => {
+        try {
+          import('@tauri-apps/api/core').then(({ invoke }) => {
+            invoke('set_click_through', { ignore: true }).catch(console.error);
+          });
+        } catch (e) { /* Not running in Tauri */ }
+      }}
     >
       {message && <div className="speech-bubble">{message}</div>}
+      
+      {/* Head Hitbox for Petting */}
       <div 
-        className={`pet-sprite ${animation === 'roaming' ? 'sprite-walk' : 'sprite-idle'}`}
-        style={{ transform: direction === 'west' ? 'scaleX(-1) scale(1.5)' : 'scaleX(1) scale(1.5)' }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '50%',
+          zIndex: 10
+        }}
+        onMouseEnter={() => setIsPetting(true)}
+        onMouseLeave={() => setIsPetting(false)}
       />
+
+      <SpriteAnimator petState={petState} petSpriteRef={petSpriteRef} />
     </div>
   );
 };

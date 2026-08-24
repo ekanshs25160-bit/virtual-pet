@@ -1,0 +1,24 @@
+{
+  "name": "mitthu",
+  "version": "1.0.0",
+  "description": "Mitthu is an interactive virtual desktop pet that lives on your screen. Similar to Comnyang, Mitthu reacts dynamically to your keyboard and mouse movements, providing a delightful and engaging companion as you work.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekanshs25160-bit/virtual-pet.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ekanshs25160-bit/virtual-pet/issues"
+  },
+  "homepage": "https://github.com/ekanshs25160-bit/virtual-pet#readme",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

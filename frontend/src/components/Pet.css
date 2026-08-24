@@ -1,10 +1,13 @@
 .pet-container {
   position: fixed;
+  top: 0;
+  left: 0;
   z-index: 1000;
   cursor: grab;
   user-select: none;
   pointer-events: auto;
   image-rendering: pixelated;
+  will-change: transform;
 }
 
 .pet-container:active {
@@ -68,6 +71,71 @@
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
   border-top: 8px solid black;
+}
+
+/* PETTING */
+.sprite-petting {
+  background-image: url('/sprites/sprite_ai_cat/idle.png');
+  animation: petBounce 0.6s infinite alternate;
+  /* Future spritesheet integration:
+  background-image: url('/sprites/master_spritesheet.png');
+  background-position-y: -64px;
+  animation: purrLoop 0.5s steps(4) infinite;
+  */
+}
+
+@keyframes petBounce {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0.9) scaleX(1.05) translateY(5px); }
+}
+
+/* KNEADING */
+.sprite-kneading {
+  background-image: url('/sprites/sprite_ai_cat/idle.png');
+  animation: kneadWobble 0.3s infinite;
+  /* Future spritesheet integration:
+  background-position-y: -128px;
+  animation: kneadLoop 0.4s steps(4) infinite;
+  */
+}
+
+@keyframes kneadWobble {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(2deg); }
+}
+
+/* OVERHEATING */
+.sprite-overheating {
+  background-image: url('/sprites/sprite_ai_cat/idle.png');
+  animation: overheatShake 0.1s infinite;
+  filter: sepia(1) hue-rotate(-50deg) saturate(3);
+  /* Future spritesheet integration:
+  background-position-y: -192px;
+  animation: overheatLoop 0.2s steps(8) infinite;
+  */
+}
+
+@keyframes overheatShake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  25% { transform: translate(-1px, -2px) rotate(-1deg); }
+  50% { transform: translate(-3px, 0px) rotate(1deg); }
+  75% { transform: translate(3px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -1px) rotate(-1deg); }
+}
+
+/* THINKING */
+.sprite-thinking {
+  background-image: url('/sprites/sprite_ai_cat/idle.png');
+  animation: thinkPulse 2s infinite;
+  /* Future spritesheet integration:
+  background-position-y: -256px;
+  animation: thinkLoop 1s steps(4) infinite;
+  */
+}
+
+@keyframes thinkPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
 }
 
 

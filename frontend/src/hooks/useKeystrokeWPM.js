@@ -11,6 +11,20 @@ export const useKeystrokeWPM = () => {
     };
 
     window.addEventListener('keydown', handleKeyDown);
+    
+    // Listen for global keydown events from Tauri backend
+    let unlistenTauri = null;
+    try {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        listen('global-keydown', () => {
+          handleKeyDown();
+        }).then(unlisten => {
+          unlistenTauri = unlisten;
+        });
+      });
+    } catch (e) {
+      // Not running in Tauri
+    }
 
     const interval = setInterval(() => {
       const now = Date.now();
@@ -26,6 +40,9 @@ export const useKeystrokeWPM = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       clearInterval(interval);
+      if (unlistenTauri) {
+        unlistenTauri();
+      }
     };
   }, []);
 
