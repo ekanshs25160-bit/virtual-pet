@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useKeystrokeWPM } from '../hooks/useKeystrokeWPM';
 import { useSystemIdleTracker } from '../hooks/useSystemIdleTracker';
 import { useMochiDrag } from '../hooks/useMochiDrag';
-import { useRoaming } from '../hooks/useRoaming';
 import { SpriteAnimator } from './SpriteAnimator';
 import MiniKeyboard from './overlays/MiniKeyboard';
 import './Pet.css';
@@ -11,8 +10,7 @@ const Pet = () => {
   const wpm = useKeystrokeWPM();
   const { isIdle, idleTime } = useSystemIdleTracker(10000);
   const [position, setPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  const { isDragging, onMouseDown } = useMochiDrag(position, setPosition);
-  const { isRoaming } = useRoaming(setPosition, isDragging, isIdle);
+  const { isDragging, onPointerDown } = useMochiDrag(position, setPosition);
   
   const [petState, setPetState] = useState('IDLE');
   const [isPetting, setIsPetting] = useState(false);
@@ -21,6 +19,7 @@ const Pet = () => {
   
   const petSpriteRef = useRef(null);
   const [isTalking, setIsTalking] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
 
   const speak = (msg, duration = 3000) => {
     setMessage(msg);
@@ -34,6 +33,10 @@ const Pet = () => {
   const handleClick = () => {
     const lines = ['Meow!', 'Prrr...', 'Feed me?', 'I love you!', 'Stop clicking!'];
     speak(lines[Math.floor(Math.random() * lines.length)]);
+    setIsJumping(true);
+    setTimeout(() => {
+      setIsJumping(false);
+    }, 1000); // Jump for 1 second
   };
 
   // Track mouse directly with rAF to bypass React state thrashing
@@ -67,8 +70,13 @@ const Pet = () => {
 
   // Determine animation state
   useEffect(() => {
+    if (isJumping) {
+      setPetState('JUMPING');
+      return; // Prioritize jumping state over everything else
+    }
+    
     if (isTalking) return; // Keep talking message
-
+    
     if (isDragging) {
       setPetState('DRAGGING');
       setMessage('Put me down!');
@@ -84,28 +92,22 @@ const Pet = () => {
     } else if (isThinking) {
       setPetState('THINKING');
       setMessage('Thinking...');
-    } else if (isRoaming) {
-      setPetState('ROAMING');
-      setMessage('');
-    } else if (isIdle) {
-      setPetState('IDLE');
-      setMessage('Zzz...');
     } else {
       setPetState('IDLE');
       setMessage('');
     }
-  }, [isDragging, isPetting, wpm, isThinking, isRoaming, isIdle, isTalking]);
+  }, [isDragging, isPetting, wpm, isThinking, isIdle, isTalking, isJumping]);
 
 
   return (
     <div 
-      className={`pet-container ${petState === 'KNEADING' || petState === 'OVERHEATING' ? 'pet-typing' : ''} ${petState === 'ROAMING' ? 'pet-roaming' : ''}`}
+      className={`pet-container`}
       style={{ 
         transform: `translate(${position.x}px, ${position.y}px)`,
-        opacity: (isIdle && !isPetting && !isDragging) ? 0.6 : 1,
+        opacity: 1,
         transition: isDragging ? 'none' : 'transform 2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease'
       }}
-      onMouseDown={onMouseDown}
+      onPointerDown={onPointerDown}
       onClick={handleClick}
       onMouseEnter={() => {
         try {
@@ -115,6 +117,7 @@ const Pet = () => {
         } catch (e) { /* Not running in Tauri */ }
       }}
       onMouseLeave={() => {
+        if (isDragging) return;
         try {
           import('@tauri-apps/api/core').then(({ invoke }) => {
             invoke('set_click_through', { ignore: true }).catch(console.error);

@@ -16,7 +16,9 @@ export const useKeystrokeWPM = () => {
     let unlistenTauri = null;
     try {
       import('@tauri-apps/api/event').then(({ listen }) => {
-        listen('global-keydown', () => {
+        listen('global-keydown', (event) => {
+          const key = event.payload;
+          if (['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'Alt', 'AltGr', 'MetaLeft', 'MetaRight', 'CapsLock'].includes(key)) return;
           handleKeyDown();
         }).then(unlisten => {
           unlistenTauri = unlisten;

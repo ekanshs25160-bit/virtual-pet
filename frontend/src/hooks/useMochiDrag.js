@@ -1,40 +1,46 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export const useMochiDrag = (position, setPosition) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragInfo = useRef({ offsetX: 0, offsetY: 0, isDragging: false });
 
-  const onMouseDown = useCallback((e) => {
+  const onPointerDown = useCallback((e) => {
+    // Capture the pointer so that even if it moves fast, it stays targeted to the pet
+    e.target.setPointerCapture(e.pointerId);
+    
     setIsDragging(true);
-    setOffset({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    });
-  }, [position]);
+    dragInfo.current = {
+      isDragging: true,
+      offsetX: e.clientX - position.x,
+      offsetY: e.clientY - position.y
+    };
 
-  useEffect(() => {
-    const onMouseMove = (e) => {
-      if (!isDragging) return;
+    const onPointerMove = (moveEvent) => {
+      if (!dragInfo.current.isDragging) return;
       setPosition({
-        x: e.clientX - offset.x,
-        y: e.clientY - offset.y,
+        x: moveEvent.clientX - dragInfo.current.offsetX,
+        y: moveEvent.clientY - dragInfo.current.offsetY,
       });
     };
 
-    const onMouseUp = () => {
+    const onPointerUp = (upEvent) => {
+      upEvent.target.releasePointerCapture(upEvent.pointerId);
+      dragInfo.current.isDragging = false;
       setIsDragging(false);
+      
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      
+      try {
+        import('@tauri-apps/api/core').then(({ invoke }) => {
+          invoke('set_click_through', { ignore: true }).catch(console.error);
+        });
+      } catch (e) { /* Not running in Tauri */ }
     };
 
-    if (isDragging) {
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-    }
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  }, [position, setPosition]);
 
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, [isDragging, offset, setPosition]);
-
-  return { isDragging, onMouseDown };
+  return { isDragging, onPointerDown };
 };

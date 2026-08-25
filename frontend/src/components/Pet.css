@@ -19,40 +19,44 @@
   50% { transform: translateY(-10px); }
 }
 
-.pet-typing {
-  animation: bounce 0.3s infinite;
-}
+
 
 :root {
-  --frame-width: 32px;
-  --frame-height: 32px;
-  --total-width: calc(var(--frame-width) * 4);
+  /* 🛠️ Set this to the exact size of ONE frame in your sprite sheet */
+  --frame-width: 64px; 
+  --frame-height: 64px;
 }
 
-.pet-sprite-container {
+.pet-sprite {
   width: var(--frame-width);
   height: var(--frame-height);
-  background-repeat: no-repeat;
+  
+  /* Lock in retro pixel rendering (no blur) */
   image-rendering: pixelated;
-  transform: scale(2);
-  transform-origin: center bottom;
+  image-rendering: crisp-edges;
+  background-repeat: no-repeat;
+  
+  /* Force the background to stretch to exactly 4 frames wide */
+  background-size: calc(var(--frame-width) * 4) var(--frame-height);
+  
+  /* Anchor to the bottom so the cat doesn't float when the frame height changes */
+  background-position: bottom center; 
 }
 
-@keyframes play-4-frames {
-  0% { background-position: 0px 0px; }
-  100% { background-position: -128px 0px; }
+/* 🎬 The Universal 4-Frame Flipbook Keyframe */
+@keyframes play-frames {
+  from { background-position-x: 0px; }
+  to { background-position-x: calc(var(--frame-width) * -4); }
 }
 
-.sprite-idle {
+.state-idle {
   background-image: url('/sprites/sprite_ai_cat/idle_ai.png');
-  background-size: 128px 32px;
-  animation: play-4-frames 1.2s steps(4) infinite;
+  animation: play-frames 1.2s steps(4) infinite; /* Slow, relaxed breathing */
 }
 
-.sprite-walk {
+.state-walking {
   background-image: url('/sprites/sprite_ai_cat/walking.png');
-  background-size: 128px 32px;
-  animation: play-4-frames 0.6s steps(4) infinite;
+  animation: play-frames 0.6s steps(4) infinite; /* Brisk walking pace */
 }
 
 .speech-bubble {
@@ -85,13 +89,7 @@
 /* PETTING */
 .sprite-petting {
   background-image: url('/sprites/sprite_ai_cat/idle_ai.png');
-  background-size: 128px 32px;
-  animation: play-4-frames 1.2s steps(4) infinite, petBounce 0.6s infinite alternate;
-  /* Future spritesheet integration:
-  background-image: url('/sprites/master_spritesheet.png');
-  background-position-y: -64px;
-  animation: purrLoop 0.5s steps(4) infinite;
-  */
+  animation: play-frames 1.2s steps(4) infinite, petBounce 0.6s infinite alternate;
 }
 
 @keyframes petBounce {
@@ -100,25 +98,41 @@
 }
 
 /* KNEADING (Typing) */
-.sprite-kneading {
+.state-typing {
   background-image: url('/sprites/sprite_ai_cat/typing.png');
-  background-size: 128px 32px;
-  animation: play-4-frames 0.3s steps(4) infinite;
+  animation: play-frames 0.3s steps(4) infinite, bounce 0.3s infinite; /* Fast keyboard tapping */
 }
 
 /* OVERHEATING */
-.sprite-overheating {
+.state-overheat {
   background-image: url('/sprites/sprite_ai_cat/overheat.png');
-  background-size: 128px 32px;
-  animation: play-4-frames 0.15s steps(4) infinite;
+  animation: play-frames 0.15s steps(4) infinite, bounce 0.15s infinite; /* Frantic, jittery panic */
   filter: drop-shadow(0 0 5px red);
 }
 
 /* THINKING */
-.sprite-thinking {
+.state-thinking {
   background-image: url('/sprites/sprite_ai_cat/thinking.png');
-  background-size: 128px 32px;
-  animation: play-4-frames 1.5s steps(4) infinite;
+  animation: play-frames 1.5s steps(4) infinite; /* Slow, cyclical thought process */
+}
+
+/* JUMPING */
+.state-jumping {
+  background-image: url('/sprites/sprite_ai_cat/jumping.png');
+  animation: play-frames 0.5s steps(4) infinite, jumpUp 0.5s ease-out alternate; 
+}
+
+@keyframes jumpUp {
+  from { transform: translateY(0); }
+  to { transform: translateY(-30px); }
+}
+
+/* Flip direction for walking left/right */
+.facing-west {
+  transform: scaleX(-1);
+}
+.facing-east {
+  transform: scaleX(1);
 }
 
 
