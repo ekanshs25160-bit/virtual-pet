@@ -36,10 +36,21 @@ pub fn run() {
       }
       
       let app_handle = app.handle().clone();
+      let (tx, rx) = std::sync::mpsc::channel();
+      
+      // Thread to emit events to Tauri
+      std::thread::spawn(move || {
+          while let Ok(_) = rx.recv() {
+              let _ = app_handle.emit("global-keydown", ());
+          }
+      });
+
+      // Thread for rdev listener (macOS CGEventTap)
       std::thread::spawn(move || {
           let _ = rdev::listen(move |event| {
               if let rdev::EventType::KeyPress(_) = event.event_type {
-                  let _ = app_handle.emit("global-keydown", ());
+                  // Send event through channel instead of calling emit directly to avoid trapping
+                  let _ = tx.send(());
               }
           });
       });

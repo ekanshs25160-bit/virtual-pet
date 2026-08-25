@@ -29,7 +29,7 @@ export const SpriteAnimator = ({ petState, petSpriteRef }) => {
   return (
     <div 
       ref={petSpriteRef}
-      className={`pet-sprite ${spriteClass}`}
+      className={`pet-sprite-container ${spriteClass}`}
       style={{ transform: 'scaleX(1) scale(1.5)' }} // Base transform, overridden by rAF in Pet.jsx
     />
   );

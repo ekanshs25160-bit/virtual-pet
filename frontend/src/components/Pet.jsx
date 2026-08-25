@@ -4,6 +4,7 @@ import { useSystemIdleTracker } from '../hooks/useSystemIdleTracker';
 import { useMochiDrag } from '../hooks/useMochiDrag';
 import { useRoaming } from '../hooks/useRoaming';
 import { SpriteAnimator } from './SpriteAnimator';
+import MiniKeyboard from './overlays/MiniKeyboard';
 import './Pet.css';
 
 const Pet = () => {
@@ -138,6 +139,11 @@ const Pet = () => {
       />
 
       <SpriteAnimator petState={petState} petSpriteRef={petSpriteRef} />
+
+      {/* Floating Mechanical Mini-Keyboard */}
+      {(petState === 'KNEADING' || petState === 'OVERHEATING') && (
+        <MiniKeyboard isOverheating={petState === 'OVERHEATING'} wpm={wpm} />
+      )}
     </div>
   );
 };

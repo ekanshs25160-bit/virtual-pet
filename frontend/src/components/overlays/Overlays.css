@@ -1,0 +1,71 @@
+/* Mini Keyboard Layout */
+.mini-keyboard-wrapper {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.keyboard-base {
+  background: #333842;
+  border: 2px solid #1e222b;
+  border-radius: 4px;
+  padding: 3px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.keycap-row {
+  display: flex;
+  gap: 2px;
+}
+
+.keycap {
+  width: 8px;
+  height: 6px;
+  background: #abb2bf;
+  border-radius: 1px;
+  box-shadow: 0 1px 0 #5c6370;
+  transition: transform 0.05s ease, background-color 0.05s ease;
+}
+
+.keycap.spacebar {
+  width: 18px;
+}
+
+.keycap.active {
+  animation: keyTap 0.18s infinite alternate;
+  background: #61afef;
+}
+
+.mini-keyboard-wrapper.overheating .keyboard-base {
+  border-color: #e06c75;
+  box-shadow: 0 0 8px rgba(224, 108, 117, 0.8);
+}
+
+.mini-keyboard-wrapper.overheating .keycap.active {
+  background: #e06c75;
+}
+
+.wpm-indicator {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-top: 3px;
+}
+
+@keyframes keyTap {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(1.5px); }
+}
