@@ -38,12 +38,6 @@ export const useMochiDrag = (position, setPosition) => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
-      
-      try {
-        import('@tauri-apps/api/core').then(({ invoke }) => {
-          invoke('set_click_through', { ignore: true }).catch(console.error);
-        });
-      } catch (e) { /* Not running in Tauri */ }
     };
 
     window.addEventListener('pointermove', onPointerMove);

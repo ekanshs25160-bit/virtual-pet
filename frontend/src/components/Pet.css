@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   z-index: 1000;
-  cursor: grab;
+  cursor: pointer;
   user-select: none;
   pointer-events: auto;
   image-rendering: pixelated;
@@ -11,7 +11,7 @@
 }
 
 .pet-container:active {
-  cursor: grabbing;
+  cursor: pointer;
 }
 
 @keyframes bounce {

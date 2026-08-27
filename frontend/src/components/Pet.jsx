@@ -7,9 +7,33 @@ import './Pet.css';
 
 const Pet = () => {
   const wpm = useKeystrokeWPM();
-  const { isIdle, idleTime } = useSystemIdleTracker(10000);
   const [position, setPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
   const { isDragging, onPointerDown } = useMochiDrag(position, setPosition);
+  const { isIdle, idleTime } = useSystemIdleTracker(10000, isDragging);
+
+  // Sync bounding box with Rust for global click-through toggling
+  useEffect(() => {
+    if (!petSpriteRef.current) return;
+    
+    // We use a small timeout to ensure the DOM has updated its transform before measuring
+    const timer = setTimeout(() => {
+      const rect = petSpriteRef.current.getBoundingClientRect();
+      // Add a generous padding around the cat (e.g. 20px) to ensure easy grabbing
+      const padding = 20;
+      try {
+        import('@tauri-apps/api/core').then(({ invoke }) => {
+          invoke('update_pet_bounds', { 
+            x: rect.left - padding, 
+            y: rect.top - padding, 
+            width: rect.width + (padding * 2), 
+            height: rect.height + (padding * 2) 
+          }).catch(console.error);
+        });
+      } catch (e) { /* Not running in Tauri */ }
+    }, 10);
+    
+    return () => clearTimeout(timer);
+  }, [position.x, position.y]);
   
   const [petState, setPetState] = useState('IDLE');
   const [isPetting, setIsPetting] = useState(false);
@@ -108,21 +132,6 @@ const Pet = () => {
       }}
       onPointerDown={onPointerDown}
       onClick={handleClick}
-      onMouseEnter={() => {
-        try {
-          import('@tauri-apps/api/core').then(({ invoke }) => {
-            invoke('set_click_through', { ignore: false }).catch(console.error);
-          });
-        } catch (e) { /* Not running in Tauri */ }
-      }}
-      onMouseLeave={() => {
-        if (isDragging) return;
-        try {
-          import('@tauri-apps/api/core').then(({ invoke }) => {
-            invoke('set_click_through', { ignore: true }).catch(console.error);
-          });
-        } catch (e) { /* Not running in Tauri */ }
-      }}
     >
       {message && <div className="speech-bubble">{message}</div>}
       

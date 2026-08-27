@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export const useSystemIdleTracker = (idleTimeout = 30000) => {
+export const useSystemIdleTracker = (idleTimeout = 30000, isDragging = false) => {
   const [isIdle, setIsIdle] = useState(false);
   const [idleTime, setIdleTime] = useState(0);
   const lastActivityRef = useRef(Date.now());
@@ -17,6 +17,12 @@ export const useSystemIdleTracker = (idleTimeout = 30000) => {
     window.addEventListener('scroll', handleActivity);
 
     const interval = setInterval(() => {
+      if (isDragging) {
+        lastActivityRef.current = Date.now(); // Prevent idle trigger while dragging
+        if (isIdle) setIsIdle(false);
+        return;
+      }
+      
       const now = Date.now();
       const diff = now - lastActivityRef.current;
       setIdleTime(diff);
