@@ -100,14 +100,14 @@
 /* KNEADING (Typing) */
 .state-typing {
   background-image: url('/sprites/sprite_ai_cat/typing.png');
-  animation: play-frames 0.3s steps(4) infinite, bounce 0.3s infinite; /* Fast keyboard tapping */
+  animation: play-frames 0.4s steps(4) infinite, bounce 0.4s infinite; /* Fast keyboard tapping */
 }
 
 /* OVERHEATING */
 .state-overheat {
   background-image: url('/sprites/sprite_ai_cat/overheat.png');
-  animation: play-frames 0.15s steps(4) infinite, bounce 0.15s infinite; /* Frantic, jittery panic */
-  filter: drop-shadow(0 0 5px red);
+  animation: play-frames 0.40s steps(4) infinite, bounce 0.40s infinite; /* Frantic, jittery panic */
+  /* filter: drop-shadow(0 0 5px red); */
 }
 
 /* THINKING */
