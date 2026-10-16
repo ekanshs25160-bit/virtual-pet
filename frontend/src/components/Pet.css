@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   z-index: 1000;
-  cursor: pointer;
+  cursor: grab;
   user-select: none;
   pointer-events: auto;
   image-rendering: pixelated;
@@ -11,128 +11,238 @@
 }
 
 .pet-container:active {
-  cursor: pointer;
+  cursor: grabbing;
 }
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-
 
 :root {
-  /* 🛠️ Set this to the exact size of ONE frame in your sprite sheet */
-  --frame-width: 64px; 
+  --frame-width: 64px;
   --frame-height: 64px;
+}
+
+.pet-flipper {
+  will-change: transform;
+  transform-origin: bottom center;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pet-flipper.stretch-grow-mode {
+  transform: scale(2.25) !important;
+}
+
+.pet-physics-wrap {
+  position: relative;
+  will-change: transform;
+  transform-origin: bottom center;
+  transition: transform 0.12s ease-out;
+}
+
+.pet-eye-follow-layer {
+  will-change: transform;
+  transition: transform 0.14s ease-out;
+}
+
+.pet-physics-wrap.mochi-landing {
+  animation: mochiSquish 0.48s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Shaking while dragging wobbles side-to-side like mochi jelly */
+.pet-physics-wrap.mochi-shake-wobble {
+  animation: mochiShakeWobble 0.26s ease-in-out infinite;
+}
+
+@keyframes mochiShakeWobble {
+  0%, 100% { transform: translateX(0) rotate(0deg) scaleX(1); }
+  25% { transform: translateX(-6px) rotate(-14deg) scaleX(1.12) scaleY(0.92); }
+  75% { transform: translateX(6px) rotate(14deg) scaleX(1.12) scaleY(0.92); }
+}
+
+@keyframes mochiSquish {
+  0% { transform: scaleX(1.3) scaleY(0.72) translateY(8px); }
+  50% { transform: scaleX(0.88) scaleY(1.15) translateY(-5px); }
+  100% { transform: scaleX(1) scaleY(1) translateY(0); }
 }
 
 .pet-sprite {
   width: var(--frame-width);
   height: var(--frame-height);
-  
-  /* Lock in retro pixel rendering (no blur) */
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   background-repeat: no-repeat;
-  
-  /* Force the background to stretch to exactly 4 frames wide */
   background-size: calc(var(--frame-width) * 4) var(--frame-height);
-  
-  /* Anchor to the bottom so the cat doesn't float when the frame height changes */
-  background-position: bottom center; 
+  background-position: bottom center;
+  transform-origin: bottom center;
 }
 
-/* 🎬 The Universal 4-Frame Flipbook Keyframe */
+/* 4-Frame Flipbook Keyframe */
 @keyframes play-frames {
   from { background-position-x: 0px; }
   to { background-position-x: calc(var(--frame-width) * -4); }
 }
 
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* EYE FOLLOW (9-pose directional gaze sprite sheet!) */
+.state-eyes-follow {
+  background-image: url('/sprites/sprite_ai_cat/eyes_rolling.png');
+  background-size: calc(var(--frame-width) * 9) var(--frame-height);
+  background-position-y: bottom;
+}
+
 .state-idle {
   background-image: url('/sprites/sprite_ai_cat/idle_ai.png');
-  animation: play-frames 1.2s steps(4) infinite; /* Slow, relaxed breathing */
+  animation: play-frames 2.2s steps(4) infinite;
 }
 
-.state-walking {
-  background-image: url('/sprites/sprite_ai_cat/walking.png');
-  animation: play-frames 0.6s steps(4) infinite; /* Brisk walking pace */
+/* GROOMING (Calm, lifelike paw-lick & ear-wash when idle) */
+.state-grooming {
+  background-image: url('/sprites/sprite_ai_cat/grooming.png');
+  animation: play-frames 2.8s steps(4) infinite;
 }
 
-.speech-bubble {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border: 2px solid black;
-  border-radius: 8px;
-  padding: 8px;
-  margin-bottom: 10px;
-  font-family: var(--mono);
-  font-size: 14px;
-  white-space: nowrap;
-  color: black;
+/* SLEEPING (Slow, peaceful sleep with drawn zZ when idle longer) */
+.state-sleeping {
+  background-image: url('/sprites/sprite_ai_cat/sleeping.png');
+  animation: play-frames 3.6s steps(4) infinite;
 }
 
-.speech-bubble::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid black;
+/* FOCUS MODE (Warm coffee/tea sipping while Pomodoro timer runs) */
+.state-focus-mode {
+  background-image: url('/sprites/sprite_ai_cat/focus_mode.png');
+  animation: play-frames 3.0s steps(4) infinite;
 }
 
-/* PETTING */
+/* PEEKING (Peeks out when placed on the left or right screen edge) */
+.state-peeking {
+  background-image: url('/sprites/sprite_ai_cat/peeking.png');
+  animation: play-frames 2.8s steps(4) infinite;
+}
+
+.state-peeking.peek-left {
+  transform: scaleX(-1);
+}
+
+/* MOUSE HUNT (Crouch, butt-wiggle & tail-flick) */
+.state-mouse-hunt {
+  background-image: url('/sprites/sprite_ai_cat/mouse_hunt.png');
+  animation: play-frames 1.1s steps(4) infinite;
+}
+
+.state-dragging {
+  background-image: url('/sprites/sprite_ai_cat/mochidrag.png');
+  animation: play-frames 1.1s steps(4) infinite;
+}
+
+/* PURRING PETS */
 .sprite-petting {
-  background-image: url('/sprites/sprite_ai_cat/idle_ai.png');
-  animation: play-frames 1.2s steps(4) infinite, petBounce 0.6s infinite alternate;
-}
-
-@keyframes petBounce {
-  from { transform: scaleY(1); }
-  to { transform: scaleY(0.9) scaleX(1.05) translateY(5px); }
+  background-image: url('/sprites/sprite_ai_cat/purring.png');
+  animation: play-frames 1.5s steps(4) infinite;
 }
 
 /* KNEADING (Typing) */
 .state-typing {
   background-image: url('/sprites/sprite_ai_cat/typing.png');
-  animation: play-frames 0.4s steps(4) infinite, bounce 0.4s infinite; /* Fast keyboard tapping */
+  animation: play-frames 0.65s steps(4) infinite, bounce 0.65s infinite;
+}
+
+/* PAPER UNROLL / TOILET PAPER ROLLING */
+.state-paper-unroll {
+  background-image: url('/sprites/sprite_ai_cat/rolling.png');
+  animation: play-frames 1.15s steps(4) infinite;
 }
 
 /* OVERHEATING */
 .state-overheat {
   background-image: url('/sprites/sprite_ai_cat/overheat.png');
-  animation: play-frames 0.40s steps(4) infinite, bounce 0.40s infinite; /* Frantic, jittery panic */
-  /* filter: drop-shadow(0 0 5px red); */
+  animation: play-frames 0.45s steps(4) infinite, overheatJitter 0.2s infinite;
+}
+
+@keyframes overheatJitter {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-1.5px, -2px); }
+  50% { transform: translate(1.5px, -3px); }
+  75% { transform: translate(-1.5px, -1.5px); }
+}
+
+/* STRETCH REMINDER (Grows large & plays 4-frame stretch + yawn sheet) */
+.state-stretch-reminder {
+  background-image: url('/sprites/sprite_ai_cat/stretch.png');
+  animation: play-frames 2.4s steps(4) infinite;
 }
 
 /* THINKING */
 .state-thinking {
   background-image: url('/sprites/sprite_ai_cat/thinking.png');
-  animation: play-frames 1.5s steps(4) infinite; /* Slow, cyclical thought process */
+  animation: play-frames 2.0s steps(4) infinite;
 }
 
-/* JUMPING */
+/* JUMPING / AGENT DONE */
 .state-jumping {
   background-image: url('/sprites/sprite_ai_cat/jumping.png');
-  animation: play-frames 0.5s steps(4) infinite, jumpUp 0.5s ease-out alternate; 
+  animation: play-frames 0.85s steps(4) infinite, jumpUp 0.42s ease-out infinite alternate;
 }
 
 @keyframes jumpUp {
   from { transform: translateY(0); }
-  to { transform: translateY(-30px); }
+  to { transform: translateY(-16px); }
 }
 
-/* Flip direction for walking left/right */
-.facing-west {
-  transform: scaleX(-1);
+/* Water Cup Badge */
+.water-cup-badge {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  font-size: 14px;
+  z-index: 20;
+  animation: bounce 0.7s infinite;
 }
-.facing-east {
-  transform: scaleX(1);
+
+/* Subtle IDLE Custom Markings */
+.idle-customization-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.pixel-blush {
+  position: absolute;
+  width: 5px;
+  height: 2.5px;
+  background: rgba(244, 114, 182, 0.65);
+  border-radius: 1px;
+}
+
+.pixel-blush.left {
+  left: 16px;
+  top: 36px;
+}
+
+.pixel-blush.right {
+  left: 41px;
+  top: 36px;
+}
+
+.pixel-forehead-stripe {
+  position: absolute;
+  left: 28px;
+  top: 21px;
+  width: 6px;
+  height: 3px;
+  background: rgba(251, 191, 36, 0.65);
+  border-radius: 1px;
+}
+
+.pixel-calico-spot {
+  position: absolute;
+  left: 36px;
+  top: 20px;
+  width: 6px;
+  height: 5px;
+  background: rgba(249, 115, 22, 0.65);
+  border-radius: 2px;
 }
 
 

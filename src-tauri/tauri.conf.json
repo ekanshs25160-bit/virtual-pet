@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Comnyang",
+  "productName": "Mitthu",
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
@@ -13,7 +13,7 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "Comnyang",
+        "title": "Mitthu",
         "width": 800,
         "height": 600,
         "resizable": true,

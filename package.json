@@ -4,7 +4,10 @@
   "description": "Mitthu is an interactive virtual desktop pet that lives on your screen. Similar to Comnyang, Mitthu reacts dynamically to your keyboard and mouse movements, providing a delightful and engaging companion as you work.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "repository": {
     "type": "git",

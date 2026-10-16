@@ -1,85 +1,75 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { soundFX } from '../services/soundEffects';
+import { listenTauri } from '../services/tauriEvents';
 
-export const useKeystrokeWPM = (windowSizeMs = 5000) => {
+const MODIFIER_KEYS_LOCAL = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'];
+const MODIFIER_KEYS_GLOBAL = [
+  'ShiftLeft',
+  'ShiftRight',
+  'ControlLeft',
+  'ControlRight',
+  'Alt',
+  'AltGr',
+  'MetaLeft',
+  'MetaRight',
+  'CapsLock',
+];
+
+export const useKeystrokeWPM = () => {
   const [wpm, setWpm] = useState(0);
-  const keystrokesRef = useRef([]);
+
+  const keyTimestampsRef = useRef([]);
+  const lastKeyTimeRef = useRef(0);
   const idleTimeoutRef = useRef(null);
 
-  const updateWPM = useCallback(() => {
-    const now = Date.now();
-    
-    // 1. The Sliding Window: Drop keystrokes older than windowSizeMs
-    keystrokesRef.current = keystrokesRef.current.filter(time => now - time <= windowSizeMs);
-    
-    const keysInWindow = keystrokesRef.current.length;
-
-    // 2. Natural Idle Detection
-    if (keysInWindow === 0) {
-      setWpm(0);
-      return;
-    }
-
-    // 3. Stable WPM Math
-    // Instead of dividing by the tiny time since the first keystroke (which causes 200+ WPM spikes),
-    // we calculate the WPM relative to the entire 5-second sliding window.
-    // windowSizeMs is 5000ms (5 seconds). 60000 / 5000 = 12 multiplier to reach 1 minute.
-    const multiplier = 60000 / windowSizeMs;
-    const calculatedWpm = Math.round((keysInWindow / 5) * multiplier);
-    
-    setWpm(calculatedWpm);
-  }, [windowSizeMs]);
-
-  // The Decay Loop: Runs twice a second to recalculate speed even when hands are off the keyboard
   useEffect(() => {
-    const decayTimer = setInterval(updateWPM, 500);
-    return () => clearInterval(decayTimer);
-  }, [updateWPM]);
+    const recordKeystroke = () => {
+      const now = Date.now();
+      // Deduplicate when both local window keydown and Tauri global-keydown fire for the same key
+      if (now - lastKeyTimeRef.current < 18) return;
+      lastKeyTimeRef.current = now;
 
-  useEffect(() => {
-    const handleKeyDown = () => {
-      keystrokesRef.current.push(Date.now());
-      updateWPM();
-      
-      // Reset WPM to 0 if no keys are pressed for 1.5 seconds
+      soundFX.playKeyTap();
+
+      // Keep keystrokes from the last 2.5 seconds for responsive burst WPM
+      const windowMs = 2500;
+      const recent = keyTimestampsRef.current.filter((t) => now - t <= windowMs);
+      recent.push(now);
+      keyTimestampsRef.current = recent;
+
+      if (recent.length === 1) {
+        // Immediate feedback on the very first keystroke so Kneading starts right away
+        setWpm(28);
+      } else {
+        const spanMinutes = Math.max(350, now - recent[0]) / 60000;
+        const rawWpm = Math.round(recent.length / 5 / spanMinutes);
+        setWpm(Math.max(28, Math.min(rawWpm, 220)));
+      }
+
       clearTimeout(idleTimeoutRef.current);
       idleTimeoutRef.current = setTimeout(() => {
         setWpm(0);
-        keystrokesRef.current = []; // Clear history so it doesn't resume from old WPM
-      }, 1500);
+        keyTimestampsRef.current = [];
+      }, 1100);
     };
 
-    // Only use local event listener if not running in Tauri
-    const isTauri = window.__TAURI_IPC__ !== undefined || window.__TAURI_INTERNALS__ !== undefined;
-    if (!isTauri) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
-    
-    // Listen for global keydown events from Tauri backend
-    let unlistenTauri = null;
-    try {
-      import('@tauri-apps/api/event').then(({ listen }) => {
-        listen('global-keydown', (event) => {
-          const key = event.payload;
-          if (['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'Alt', 'AltGr', 'MetaLeft', 'MetaRight', 'CapsLock'].includes(key)) return;
-          handleKeyDown();
-        }).then(unlisten => {
-          unlistenTauri = unlisten;
-        });
-      });
-    } catch (e) {
-      // Not running in Tauri
-    }
+    const handleLocalKeyDown = (e) => {
+      if (MODIFIER_KEYS_LOCAL.includes(e.key)) return;
+      recordKeystroke();
+    };
+
+    window.addEventListener('keydown', handleLocalKeyDown);
+    const unlistenTauri = listenTauri('global-keydown', (event) => {
+      if (MODIFIER_KEYS_GLOBAL.includes(event.payload)) return;
+      recordKeystroke();
+    });
 
     return () => {
-      if (!isTauri) {
-        window.removeEventListener('keydown', handleKeyDown);
-      }
+      window.removeEventListener('keydown', handleLocalKeyDown);
       clearTimeout(idleTimeoutRef.current);
-      if (unlistenTauri) {
-        unlistenTauri();
-      }
+      unlistenTauri();
     };
-  }, [updateWPM]);
+  }, []);
 
   return wpm;
 };
