@@ -17,10 +17,6 @@ export const SpriteAnimator = ({
   let spriteClass = 'state-eyes-follow';
 
   switch (petState) {
-    case 'POUNCING':
-    case 'MOUSE_HUNT':
-      spriteClass = 'state-mouse-hunt';
-      break;
     case 'DRAGGING':
       spriteClass = 'state-dragging';
       break;

@@ -69,7 +69,6 @@ const Pet = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [isEating, setIsEating] = useState(false);
-  const [isPouncing, setIsPouncing] = useState(false);
   const [activeReminderType, setActiveReminderType] = useState(null);
 
   const [message, setMessage] = useState('');
@@ -134,7 +133,7 @@ const Pet = () => {
     onPointerDown,
   } = useMochiDrag(position, setPosition, handleDropPosition);
 
-  const { isIdle, idleTime, cursorPosRef, cursorPounceTarget, clearPounceTarget } =
+  const { isIdle, idleTime, cursorPosRef, markActive } =
     useSystemIdleTracker(15000, isDragging);
 
   // Detect if user placed the cat on the left or right screen edge for Peeking mode
@@ -231,27 +230,10 @@ const Pet = () => {
     isThinking ||
     isJumping ||
     isEating ||
-    isPouncing ||
     (showPomodoro && isPomodoroRunning) ||
     Boolean(activeReminderType) ||
     Boolean(peekSide) ||
     showHub;
-
-  // Mouse Hunt (in-place pounce reaction when moving cursor fast, without walking away)
-  useEffect(() => {
-    if (!cursorPounceTarget || isDragging || isBusy) return;
-
-    setIsPouncing(true);
-    soundFX.playJump();
-    spawnBurst(['🐾', '❗']);
-    speak('Mouse hunt!! 🐾', 2200, 'happy');
-    clearPounceTarget();
-
-    const timer = setTimeout(() => {
-      setIsPouncing(false);
-    }, 2200);
-    return () => clearTimeout(timer);
-  }, [cursorPounceTarget, isDragging, isBusy, clearPounceTarget, spawnBurst, speak]);
 
   // 9-Pose Eye Follow via eyes_rolling.png (3x3 directional gaze grid mapped to frames 0..8)
   useEffect(() => {
@@ -321,6 +303,7 @@ const Pet = () => {
     clickStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
     setIsJumping(false);
     setIsPetting(false);
+    markActive();
     onPointerDown(e);
   };
 
@@ -359,6 +342,7 @@ const Pet = () => {
   };
 
   const handleClick = (e) => {
+    markActive();
     const dx = Math.abs(e.clientX - clickStartRef.current.x);
     const dy = Math.abs(e.clientY - clickStartRef.current.y);
     const timeDiff = Date.now() - clickStartRef.current.time;
@@ -481,11 +465,6 @@ const Pet = () => {
       return;
     }
 
-    if (isPouncing) {
-      setPetState('MOUSE_HUNT');
-      return;
-    }
-
     if (wpm >= 60) {
       setPetState('OVERHEATING');
       setMessage(`OVERHEAT! ${wpm} WPM 🔥`);
@@ -540,7 +519,6 @@ const Pet = () => {
     isShaking,
     activeReminderType,
     isEating,
-    isPouncing,
     isJumping,
     wpm,
     isScrolling,

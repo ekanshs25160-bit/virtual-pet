@@ -4,7 +4,6 @@ import { listenTauri } from '../services/tauriEvents';
 export const useSystemIdleTracker = (idleTimeout = 15000, isDragging = false) => {
   const [isIdle, setIsIdle] = useState(false);
   const [idleTime, setIdleTime] = useState(0);
-  const [cursorPounceTarget, setCursorPounceTarget] = useState(null);
 
   const lastActivityRef = useRef(Date.now());
   const isDraggingRef = useRef(isDragging);
@@ -13,9 +12,6 @@ export const useSystemIdleTracker = (idleTimeout = 15000, isDragging = false) =>
     y: window.innerHeight / 2,
     time: Date.now(),
   });
-  const moveHistoryRef = useRef([]);
-  const wiggleHistoryRef = useRef([]);
-  const lastPounceTimeRef = useRef(0);
 
   // Reset idle immediately on activity (functional updates bail out when unchanged,
   // so this does not cause a re-render on every mouse move).
@@ -40,40 +36,8 @@ export const useSystemIdleTracker = (idleTimeout = 15000, isDragging = false) =>
 
       cursorPosRef.current = { x, y, time: now };
 
-      // Ignore sub-pixel jitter so grooming / sleeping can actually kick in
+      // Ignore sub-pixel jitter so grooming / sleeping can kick in
       if (stepDist > 3) markActive();
-
-      // 1. Mouse Hunt: fast cursor travel within a 160ms sliding window
-      const moves = moveHistoryRef.current.filter((m) => now - m.time <= 160);
-      if (stepDist > 1) moves.push({ dist: stepDist, time: now });
-      moveHistoryRef.current = moves;
-      const rollingDist = moves.reduce((sum, m) => sum + m.dist, 0);
-
-      if (rollingDist > 240 && now - lastPounceTimeRef.current > 4500) {
-        lastPounceTimeRef.current = now;
-        moveHistoryRef.current = [];
-        setCursorPounceTarget({ x, y, timestamp: now });
-        return;
-      }
-
-      // 2. Rapid side-to-side cursor wiggle
-      if (Math.abs(dx) > 14) {
-        const dir = dx > 0 ? 1 : -1;
-        const hist = wiggleHistoryRef.current;
-        if (hist.length === 0 || hist[hist.length - 1].dir !== dir) {
-          hist.push({ dir, time: now });
-        }
-        wiggleHistoryRef.current = hist.filter((item) => now - item.time < 750);
-
-        if (
-          wiggleHistoryRef.current.length >= 3 &&
-          now - lastPounceTimeRef.current > 4500
-        ) {
-          lastPounceTimeRef.current = now;
-          wiggleHistoryRef.current = [];
-          setCursorPounceTarget({ x, y, timestamp: now });
-        }
-      }
     };
 
     const handleMouseMove = (e) => recordMove(e.clientX, e.clientY);
@@ -113,13 +77,10 @@ export const useSystemIdleTracker = (idleTimeout = 15000, isDragging = false) =>
     };
   }, [idleTimeout, markActive]);
 
-  const clearPounceTarget = useCallback(() => setCursorPounceTarget(null), []);
-
   return {
     isIdle,
     idleTime,
     cursorPosRef,
-    cursorPounceTarget,
-    clearPounceTarget,
+    markActive,
   };
 };
